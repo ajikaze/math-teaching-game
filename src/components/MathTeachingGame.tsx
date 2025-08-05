@@ -1,14 +1,11 @@
 // src/components/MathTeachingGame.tsx
 import React, { useState, useEffect } from "react";
 import {
-    Book,
     Trophy,
-    Heart,
     Brain,
     MessageCircle,
     Mic,
     MicOff,
-    Settings,
     Sparkles,
     RefreshCw,
 } from "lucide-react";
@@ -124,43 +121,78 @@ const MathTeachingGame: React.FC = () => {
         "わあ！そんな方法があるんだ！🤩 勉強になったよ、ありがとう！",
     ];
 
-    // モックAPI呼び出し関数
-    const callMockAPI = async (
+    // 実際のAPI呼び出し関数
+    const callAPI = async (
         requestType: "question" | "answer",
         message?: string
     ) => {
-        // APIコールのシミュレーション
-        await new Promise((resolve) =>
-            setTimeout(resolve, 1000 + Math.random() * 2000)
-        );
+        const requestData = {
+            conversationHistory,
+            characterState: character,
+            currentTopic,
+            requestType,
+            ...(message && { message }),
+        };
 
-        if (requestType === "question") {
-            const questions =
-                mockQuestions[currentTopic as keyof typeof mockQuestions];
-            const randomQuestion =
-                questions[Math.floor(Math.random() * questions.length)];
+        const endpoint = requestType === "question" ? "question" : "evaluate";
 
+        try {
+            const response = await fetch(
+                `http://localhost:3001/api/chat/${endpoint}`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(requestData),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(`API error: ${response.status}`);
+            }
+
+            const data = await response.json();
             return {
-                response: randomQuestion,
-                timestamp: new Date().toISOString(),
+                response: data.response,
+                expGain: data.expGain || 0,
+                mood: data.mood || "curious",
+                timestamp: data.timestamp || new Date().toISOString(),
             };
-        } else {
-            const randomResponse =
-                mockResponses[Math.floor(Math.random() * mockResponses.length)];
-            const expGain = Math.floor(Math.random() * 20) + 5;
-            const moods: CharacterState["mood"][] = [
-                "happy",
-                "excited",
-                "curious",
-            ];
-            const randomMood = moods[Math.floor(Math.random() * moods.length)];
+        } catch (error) {
+            console.error("API呼び出しエラー:", error);
+            // エラー時はモックデータを返す
+            if (requestType === "question") {
+                const questions =
+                    mockQuestions[currentTopic as keyof typeof mockQuestions];
+                const randomQuestion =
+                    questions[Math.floor(Math.random() * questions.length)];
 
-            return {
-                response: randomResponse,
-                expGain,
-                mood: randomMood,
-                timestamp: new Date().toISOString(),
-            };
+                return {
+                    response: randomQuestion,
+                    timestamp: new Date().toISOString(),
+                };
+            } else {
+                const randomResponse =
+                    mockResponses[
+                        Math.floor(Math.random() * mockResponses.length)
+                    ];
+                const expGain = Math.floor(Math.random() * 20) + 5;
+                const moods: CharacterState["mood"][] = [
+                    "happy",
+                    "excited",
+                    "curious",
+                ];
+                const randomMood =
+                    moods[Math.floor(Math.random() * moods.length)];
+
+                return {
+                    response: randomResponse,
+                    expGain,
+                    mood: randomMood,
+                    timestamp: new Date().toISOString(),
+                };
+            }
         }
     };
 
@@ -170,7 +202,7 @@ const MathTeachingGame: React.FC = () => {
         setAiResponse("");
 
         try {
-            const data = await callMockAPI("question");
+            const data = await callAPI("question");
             setCurrentQuestion(data.response);
 
             // 質問も会話履歴に追加
@@ -205,7 +237,7 @@ const MathTeachingGame: React.FC = () => {
         setConversationHistory((prev) => [...prev, userMessage]);
 
         try {
-            const data = await callMockAPI("answer", userExplanation);
+            const data = await callAPI("answer", userExplanation);
 
             setAiResponse(data.response);
 
@@ -219,7 +251,7 @@ const MathTeachingGame: React.FC = () => {
             setConversationHistory((prev) => [...prev, aiMessage]);
 
             // キャラクター状態を更新
-            updateCharacterState(data.expGain, data.mood);
+            updateCharacterState(data.expGain || 0, data.mood || "curious");
         } catch (error) {
             setAiResponse(
                 "すみません、今は調子が悪いみたいです... 後でもう一度試してもらえますか？😅"
@@ -497,7 +529,7 @@ const MathTeachingGame: React.FC = () => {
                         </h3>
                         <div className="flex items-center space-x-2 text-sm text-gray-500">
                             <Brain size={16} />
-                            <span>デモモード</span>
+                            <span>AIモード</span>
                         </div>
                     </div>
 
@@ -653,13 +685,13 @@ const MathTeachingGame: React.FC = () => {
                 </div>
 
                 {/* デモモード通知 */}
-                <div className="math-card bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200">
-                    <div className="flex items-center space-x-2 text-amber-800">
+                <div className="math-card bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
+                    <div className="flex items-center space-x-2 text-green-800">
                         <Sparkles size={20} />
                         <div>
-                            <p className="font-medium">デモモード中</p>
+                            <p className="font-medium">AIモード稼働中</p>
                             <p className="text-sm">
-                                現在はモックデータで動作しています。実際のAI機能は開発中です！
+                                実際のAI機能でマナと対話できます！詳しく教えるほどマナが成長します。
                             </p>
                         </div>
                     </div>

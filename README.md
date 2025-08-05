@@ -1,69 +1,105 @@
-# React + TypeScript + Vite
+# マナと学ぶ数学 📚✨
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+AI キャラクター「マナ」と一緒に楽しく数学を学習できる Web アプリです。
 
-Currently, two official plugins are available:
+![Demo](https://via.placeholder.com/800x400?text=Demo+Screenshot)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🌟 特徴
 
-## Expanding the ESLint configuration
+-   **AI キャラクター**: マナがあなたの学習をサポート
+-   **育成要素**: 学習するほどマナが成長
+-   **分野別学習**: 代数、幾何、関数、確率の 4 分野
+-   **音声認識**: 声でも説明が可能
+-   **リアルタイム対話**: AI との自然な会話
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 🛠️ 技術スタック
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+-   **Frontend**: React + TypeScript + Vite
+-   **Styling**: Tailwind CSS
+-   **Icons**: Lucide React
+-   **Deployment**: Vercel
+-   **AI**: Google Gemini API (予定)
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+## 🚀 セットアップ
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 必要な環境
+
+-   Node.js 18+
+-   npm または yarn
+
+### インストール
+
+```bash
+# リポジトリをクローン
+git clone https://github.com/yourusername/math-teaching-app.git
+cd math-teaching-app
+
+# 依存関係をインストール
+npm install
+
+# 開発サーバーを起動
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### ビルド
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```bash
+# プロダクションビルド
+npm run build
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# ビルド確認
+npm run preview
 ```
+
+## 📱 使い方
+
+1. **分野選択**: 学習したい数学分野を選択
+2. **質問を聞く**: マナが出す質問を聞く
+3. **説明する**: あなたの理解を説明
+4. **フィードバック**: マナからの反応を受け取る
+5. **成長実感**: レベルアップや理解度向上を確認
+
+## 🎯 開発ロードマップ
+
+### Phase 1: 基本機能 ✅
+
+-   [x] UI コンポーネント作成
+-   [x] キャラクター状態管理
+-   [x] モックデータでの動作確認
+-   [x] Vercel デプロイ
+
+### Phase 2: AI 統合 🚧
+
+-   [ ] Google Gemini API 統合
+-   [ ] 質問生成システム
+-   [ ] 回答評価システム
+-   [ ] プロンプトエンジニアリング
+
+### Phase 3: データ永続化 📋
+
+-   [ ] ユーザー登録・ログイン
+-   [ ] 学習履歴保存
+-   [ ] 進捗データベース
+
+### Phase 4: 機能拡張 🔮
+
+-   [ ] 難易度調整機能
+-   [ ] 学習統計ダッシュボード
+-   [ ] ソーシャル機能
+-   [ ] モバイルアプリ化
+
+## 🤝 コントリビューション
+
+プルリクエストやイシューの報告を歓迎します！
+
+## 📄 ライセンス
+
+MIT License
+
+## 👥 作者
+
+-   [@yourusername](https://github.com/yourusername)
+
+---
+
+**現在はデモモード**で動作しています。実際の AI 機能は開発中です！
