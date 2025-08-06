@@ -1,9 +1,11 @@
 // backend/src/controllers/chatController.ts
 import { Request, Response } from "express";
-import { MathQuestionService } from "../services/mathQuestionService";
-import { AnswerEvaluationService } from "../services/answerEvaluationServise";
 import { logger } from "../utils/logger";
 import { CharacterState, ConversationMessage } from "../types";
+
+// 遅延インポートのための変数
+let mathQuestionService: any = null;
+let answerEvaluationService: any = null;
 
 interface ChatRequest extends Request {
     body: {
@@ -16,8 +18,26 @@ interface ChatRequest extends Request {
 }
 
 class ChatController {
-    private questionService = new MathQuestionService();
-    private evaluationService = new AnswerEvaluationService();
+    // サービスを遅延初期化
+    private async getServices() {
+        if (!mathQuestionService || !answerEvaluationService) {
+            logger.info("Initializing AI services...");
+            const { MathQuestionService } = await import(
+                "../services/mathQuestionService"
+            );
+            const { AnswerEvaluationService } = await import(
+                "../services/answerEvaluationService"
+            );
+
+            mathQuestionService = new MathQuestionService();
+            answerEvaluationService = new AnswerEvaluationService();
+        }
+
+        return {
+            questionService: mathQuestionService,
+            evaluationService: answerEvaluationService,
+        };
+    }
 
     // メインチャットハンドラー
     public handleChat = async (req: ChatRequest, res: Response) => {
@@ -42,10 +62,11 @@ class ChatController {
         try {
             const { characterState, currentTopic, conversationHistory } =
                 req.body;
+            const { questionService } = await this.getServices();
 
             logger.info(`Generating question for topic: ${currentTopic}`);
 
-            const question = await this.questionService.generateQuestion({
+            const question = await questionService.generateQuestion({
                 topic: currentTopic,
                 characterLevel: characterState.level,
                 understanding: characterState.understanding,
@@ -85,9 +106,11 @@ class ChatController {
                 return res.status(400).json({ error: "Message is required" });
             }
 
+            const { evaluationService } = await this.getServices();
+
             logger.info(`Evaluating answer for topic: ${currentTopic}`);
 
-            const evaluation = await this.evaluationService.evaluateAnswer({
+            const evaluation = await evaluationService.evaluateAnswer({
                 userAnswer: message,
                 topic: currentTopic,
                 characterState,

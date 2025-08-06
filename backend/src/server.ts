@@ -4,12 +4,56 @@ import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import dotenv from "dotenv";
-import { chatRouter } from "./routes/chat";
-import { errorHandler } from "./middleware/errorHandler";
-import { logger } from "./utils/logger";
+import path from "path";
 
 // 環境変数の読み込み
-dotenv.config();
+console.log("=== Environment Loading Debug ===");
+console.log("Current working directory:", process.cwd());
+console.log("__dirname:", __dirname);
+
+// 複数の.envパスを試行
+const possibleEnvPaths = [
+    path.join(process.cwd(), ".env"), // カレントディレクトリ
+    path.join(__dirname, "../.env"), // src/../.env
+    path.join(__dirname, "../../.env"), // dist/../../.env (コンパイル後)
+];
+
+let envLoaded = false;
+for (const envPath of possibleEnvPaths) {
+    console.log(`Trying to load .env from: ${envPath}`);
+    if (require("fs").existsSync(envPath)) {
+        console.log(`✅ Found .env file at: ${envPath}`);
+        const result = dotenv.config({ path: envPath });
+        if (!result.error) {
+            console.log("✅ .env file loaded successfully");
+            envLoaded = true;
+            break;
+        }
+    } else {
+        console.log(`❌ .env file not found at: ${envPath}`);
+    }
+}
+
+if (!envLoaded) {
+    console.log("⚠️ Trying default dotenv.config()...");
+    dotenv.config();
+}
+
+// 環境変数の確認（デバッグ用）
+console.log("=== Environment Variables ===");
+console.log("- NODE_ENV:", process.env.NODE_ENV);
+console.log("- PORT:", process.env.PORT);
+console.log(
+    "- GEMINI_API_KEY length:",
+    process.env.GEMINI_API_KEY?.length || "NOT_SET"
+);
+console.log("- GEMINI_MODEL:", process.env.GEMINI_MODEL);
+console.log("===============================");
+
+import { chatRouter } from "./routes/chat";
+import { healthRouter } from "./routes/health";
+import { errorHandler } from "./middleware/errorHandler";
+import { logger } from "./utils/logger";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -49,24 +93,34 @@ app.use((req, res, next) => {
 // APIルート
 app.use("/api/chat", chatRouter);
 
-// ヘルスチェック
-app.get("/health", (req, res) => {
-    res.json({
-        status: "OK",
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-    });
-});
+// ヘルスチェックルート
+app.use("/health", healthRouter);
 
 // ルートエンドポイント
 app.get("/", (req, res) => {
     res.json({
         message: "Math Teaching API Server",
         version: "1.0.0",
+        status: "Running",
         endpoints: [
             "POST /api/chat - Chat with Mana",
-            "GET /health - Health check",
+            "GET /health - Basic health check",
+            "GET /health/detailed - Detailed health check",
+            "GET /health/ai - AI connection test",
+            "GET /health/ai/simple - Simple AI test",
+            "GET /health/api-key - API key validation",
+            "GET /test - Test endpoint",
         ],
+    });
+});
+
+// デバッグ用エンドポイント
+app.get("/test", (req, res) => {
+    res.json({
+        message: "Test endpoint working",
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || "development",
+        port: PORT,
     });
 });
 

@@ -1,6 +1,7 @@
 // backend/src/services/answerEvaluationService.ts
 import { CharacterState, ConversationMessage } from "../types";
 import { logger } from "../utils/logger";
+import { GeminiService } from "./geminiService";
 
 interface EvaluationParams {
     userAnswer: string;
@@ -17,73 +18,99 @@ interface EvaluationResult {
 }
 
 export class AnswerEvaluationService {
-    private positiveResponses = [
-        "すごい！とても分かりやすい説明だったよ！😊 ありがとう！",
-        "なるほど〜！そういう考え方もあるんだね！✨ 勉強になった！",
-        "わあ！詳しく教えてくれてありがとう！🤩 よく理解できたよ！",
-        "その説明、とても上手だね！😄 もっと教えて欲しいな！",
-        "ありがとう！君の説明のおかげでよく分かったよ！🌟",
-    ];
+    private geminiService: GeminiService | null = null;
+    private fallbackEnabled: boolean = true;
 
-    private encouragingResponses = [
-        "うんうん、いい感じだね！😊 もう少し詳しく教えてもらえる？",
-        "なるほど！でも、ここの部分をもう少し説明してもらえるかな？🤔",
-        "いいところに気づいたね！👍 具体例があるともっと分かりやすいかも！",
-        "そうそう！その調子だよ！😄 続きも聞かせて！",
-        "おお、そこは大事なポイントだね！💡 もう少し深く教えて！",
-    ];
-
-    private confusedResponses = [
-        "うーん、ちょっと難しくて分からないかも...😅 もう少し簡単に説明してもらえる？",
-        "ごめん、ここの部分がよく理解できないな...🤔 別の言い方で教えてくれる？",
-        "あれ？ちょっと混乱しちゃった...😵‍💫 もう一度ゆっくり説明してもらえる？",
-        "うーん、なんだか難しいね...😓 基本的なところから教えてもらえるかな？",
-        "ちょっと待って！頭がこんがらがっちゃった...🌀 整理して教えて！",
-    ];
+    constructor() {
+        try {
+            this.geminiService = new GeminiService();
+            logger.info("AnswerEvaluationService initialized with Gemini AI");
+        } catch (error) {
+            logger.warn(
+                "Gemini AI not available, falling back to rule-based evaluation:",
+                error
+            );
+            this.fallbackEnabled = true;
+        }
+    }
 
     public async evaluateAnswer(
         params: EvaluationParams
     ): Promise<EvaluationResult> {
         try {
-            const { userAnswer, topic, characterState } = params;
+            // Gemini AIを試行
+            if (this.geminiService) {
+                const aiEvaluation = await this.geminiService.evaluateAnswer(
+                    params.userAnswer,
+                    params.topic,
+                    params.characterState,
+                    params.conversationHistory
+                );
 
-            logger.info(`Evaluating answer for topic: ${topic}`);
+                const experienceGain = this.calculateExperienceGain(
+                    aiEvaluation.quality,
+                    params.userAnswer.length
+                );
+                const understandingImprovement =
+                    this.calculateUnderstandingImprovement(
+                        aiEvaluation.quality
+                    );
 
-            // 回答の品質を評価
-            const quality = this.assessAnswerQuality(userAnswer, topic);
+                logger.info(`AI evaluation completed for ${params.topic}:`, {
+                    quality: aiEvaluation.quality,
+                    mood: aiEvaluation.mood,
+                });
 
-            // 経験値を計算
-            const experienceGain = this.calculateExperienceGain(
-                quality,
-                userAnswer.length
-            );
-
-            // 理解度向上を計算
-            const understandingImprovement =
-                this.calculateUnderstandingImprovement(quality);
-
-            // 新しい気分を決定
-            const newMood = this.determineNewMood(quality, characterState.mood);
-
-            // 応答を生成
-            const response = this.generateResponse(quality, topic, userAnswer);
-
-            return {
-                response,
-                experienceGain,
-                newMood,
-                understandingImprovement,
-            };
+                return {
+                    response: aiEvaluation.response,
+                    experienceGain,
+                    newMood: aiEvaluation.mood,
+                    understandingImprovement,
+                };
+            }
         } catch (error) {
-            logger.error("Answer evaluation failed:", error);
-            return {
-                response:
-                    "すみません、今は調子が悪いみたいです... 後でもう一度試してもらえますか？😅",
-                experienceGain: 0,
-                newMood: "confused",
-                understandingImprovement: 0,
-            };
+            logger.error("Gemini AI evaluation failed, using fallback:", error);
         }
+
+        // フォールバック：ルールベース評価
+        if (this.fallbackEnabled) {
+            return this.evaluateWithFallback(params);
+        }
+
+        throw new Error("Answer evaluation service unavailable");
+    }
+
+    // フォールバック用ルールベース評価
+    private evaluateWithFallback(params: EvaluationParams): EvaluationResult {
+        const { userAnswer, topic, characterState } = params;
+
+        logger.info(`Using fallback evaluation for ${topic}`);
+
+        // 回答の品質を評価
+        const quality = this.assessAnswerQuality(userAnswer, topic);
+
+        // 経験値を計算
+        const experienceGain = this.calculateExperienceGain(
+            quality,
+            userAnswer.length
+        );
+
+        // 理解度向上を計算
+        const understandingImprovement =
+            this.calculateUnderstandingImprovement(quality);
+
+        // 新しい気分を決定
+        const newMood = this.determineNewMood(quality, characterState.mood);
+
+        // 応答を生成
+        const response = this.generateResponse(quality, topic, userAnswer);
+
+        return {
+            response,
+            experienceGain,
+            newMood,
+            understandingImprovement,
+        };
     }
 
     private assessAnswerQuality(
@@ -328,5 +355,35 @@ export class AnswerEvaluationService {
         if (!topicComments) return "";
 
         return topicComments[Math.floor(Math.random() * topicComments.length)];
+    }
+
+    private positiveResponses = [
+        "すごい！とても分かりやすい説明だったよ！😊 ありがとう！",
+        "なるほど〜！そういう考え方もあるんだね！✨ 勉強になった！",
+        "わあ！詳しく教えてくれてありがとう！🤩 よく理解できたよ！",
+        "その説明、とても上手だね！😄 もっと教えて欲しいな！",
+        "ありがとう！君の説明のおかげでよく分かったよ！🌟",
+    ];
+
+    private encouragingResponses = [
+        "うんうん、いい感じだね！😊 もう少し詳しく教えてもらえる？",
+        "なるほど！でも、ここの部分をもう少し説明してもらえるかな？🤔",
+        "いいところに気づいたね！👍 具体例があるともっと分かりやすいかも！",
+        "そうそう！その調子だよ！😄 続きも聞かせて！",
+        "おお、そこは大事なポイントだね！💡 もう少し深く教えて！",
+    ];
+
+    private confusedResponses = [
+        "うーん、ちょっと難しくて分からないかも...😅 もう少し簡単に説明してもらえる？",
+        "ごめん、ここの部分がよく理解できないな...🤔 別の言い方で教えてくれる？",
+        "あれ？ちょっと混乱しちゃった...😵‍💫 もう一度ゆっくり説明してもらえる？",
+        "うーん、なんだか難しいね...😓 基本的なところから教えてもらえるかな？",
+        "ちょっと待って！頭がこんがらがっちゃった...🌀 整理して教えて！",
+    ];
+
+    // 接続テスト用
+    public async testAIConnection(): Promise<boolean> {
+        if (!this.geminiService) return false;
+        return await this.geminiService.testConnection();
     }
 }
