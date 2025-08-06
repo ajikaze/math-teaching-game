@@ -52,6 +52,8 @@ console.log("===============================");
 
 import { chatRouter } from "./routes/chat";
 import { healthRouter } from "./routes/health";
+import authRouter from "./routes/auth";
+import dataRouter from "./routes/data";
 import { errorHandler } from "./middleware/errorHandler";
 import { logger } from "./utils/logger";
 
@@ -92,6 +94,8 @@ app.use((req, res, next) => {
 
 // APIルート
 app.use("/api/chat", chatRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/data", dataRouter);
 
 // ヘルスチェックルート
 app.use("/health", healthRouter);
@@ -104,6 +108,15 @@ app.get("/", (req, res) => {
         status: "Running",
         endpoints: [
             "POST /api/chat - Chat with Mana",
+            "POST /api/auth/register - User registration",
+            "POST /api/auth/login - User login",
+            "GET /api/auth/profile - Get user profile",
+            "GET /api/data/character - Get character state",
+            "PUT /api/data/character - Update character state",
+            "POST /api/data/character/experience - Add experience",
+            "GET /api/data/conversations - Get conversation history",
+            "POST /api/data/conversations - Save message",
+            "GET /api/data/stats - Get user stats",
             "GET /health - Basic health check",
             "GET /health/detailed - Detailed health check",
             "GET /health/ai - AI connection test",

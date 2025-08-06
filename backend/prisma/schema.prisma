@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  username  String
+  password  String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  characterState CharacterState?
+  conversations  Conversation[]
+
+  @@map("users")
+}
+
+model CharacterState {
+  id                      String @id @default(cuid())
+  userId                  String @unique @map("user_id")
+  level                   Int    @default(1)
+  experience              Int    @default(0)
+  understandingAlgebra    Int    @default(0) @map("understanding_algebra")
+  understandingGeometry   Int    @default(0) @map("understanding_geometry")
+  understandingFunctions  Int    @default(0) @map("understanding_functions")
+  understandingProbability Int   @default(0) @map("understanding_probability")
+  mood                    String @default("curious")
+  totalProblems           Int    @default(0) @map("total_problems")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("character_states")
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  role      String
+  content   String
+  topic     String?
+  timestamp DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("conversations")
+}

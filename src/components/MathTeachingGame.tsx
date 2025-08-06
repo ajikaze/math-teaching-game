@@ -8,9 +8,15 @@ import {
     MicOff,
     Sparkles,
     RefreshCw,
+    LogOut,
+    User,
 } from "lucide-react";
+import { useAuth } from '../contexts/AuthContext';
+import { useGameData } from '../contexts/GameDataContext';
+import { apiClient } from '../utils/api';
 
-interface CharacterState {
+// Local interfaces for component state
+interface LocalCharacterState {
     name: string;
     level: number;
     experience: number;
@@ -26,14 +32,24 @@ interface CharacterState {
     personality: string;
 }
 
-interface ConversationMessage {
+interface LocalConversationMessage {
     role: string;
     content: string;
     timestamp: string;
 }
 
 const MathTeachingGame: React.FC = () => {
-    const [character, setCharacter] = useState<CharacterState>({
+    const { user, logout } = useAuth();
+    const { 
+        characterState, 
+        conversationHistory: savedHistory, 
+        addExperience, 
+        updateMood, 
+        saveMessage,
+        refreshAllData
+    } = useGameData();
+    
+    const [character, setCharacter] = useState<LocalCharacterState>({
         name: "マナ",
         level: 1,
         experience: 0,
@@ -48,6 +64,27 @@ const MathTeachingGame: React.FC = () => {
         totalProblems: 0,
         personality: "curious_student",
     });
+    
+    // Sync with server data when available
+    useEffect(() => {
+        if (characterState) {
+            setCharacter({
+                name: "マナ",
+                level: characterState.level,
+                experience: characterState.experience,
+                maxExp: characterState.level * 100, // Calculate maxExp based on level
+                understanding: {
+                    algebra: characterState.understandingAlgebra,
+                    geometry: characterState.understandingGeometry,
+                    functions: characterState.understandingFunctions,
+                    probability: characterState.understandingProbability,
+                },
+                mood: characterState.mood as "curious" | "happy" | "confused" | "excited",
+                totalProblems: characterState.totalProblems,
+                personality: "curious_student",
+            });
+        }
+    }, [characterState]);
 
     const [currentTopic, setCurrentTopic] = useState<string>("algebra");
     const [currentQuestion, setCurrentQuestion] = useState<string>("");
@@ -56,8 +93,20 @@ const MathTeachingGame: React.FC = () => {
     const [isListening, setIsListening] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [conversationHistory, setConversationHistory] = useState<
-        ConversationMessage[]
+        LocalConversationMessage[]
     >([]);
+    
+    // Sync with server conversation history
+    useEffect(() => {
+        if (savedHistory && savedHistory.length > 0) {
+            const localHistory = savedHistory.map(msg => ({
+                role: msg.role,
+                content: msg.content,
+                timestamp: msg.timestamp
+            }));
+            setConversationHistory(localHistory);
+        }
+    }, [savedHistory]);
     const [isGeneratingQuestion, setIsGeneratingQuestion] =
         useState<boolean>(false);
 
@@ -134,25 +183,8 @@ const MathTeachingGame: React.FC = () => {
             ...(message && { message }),
         };
 
-        const endpoint = requestType === "question" ? "question" : "evaluate";
-
         try {
-            const response = await fetch(
-                `http://localhost:3001/api/chat/${endpoint}`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(requestData),
-                }
-            );
-
-            if (!response.ok) {
-                throw new Error(`API error: ${response.status}`);
-            }
-
-            const data = await response.json();
+            const data = await apiClient.chat(requestData);
             return {
                 response: data.response,
                 expGain: data.expGain || 0,
@@ -178,7 +210,7 @@ const MathTeachingGame: React.FC = () => {
                         Math.floor(Math.random() * mockResponses.length)
                     ];
                 const expGain = Math.floor(Math.random() * 20) + 5;
-                const moods: CharacterState["mood"][] = [
+                const moods: LocalCharacterState["mood"][] = [
                     "happy",
                     "excited",
                     "curious",
@@ -205,8 +237,8 @@ const MathTeachingGame: React.FC = () => {
             const data = await callAPI("question");
             setCurrentQuestion(data.response);
 
-            // 質問も会話履歴に追加
-            const newMessage: ConversationMessage = {
+            // 質問も会話履歴に追加（ローカルとサーバーの両方）
+            const newMessage: LocalConversationMessage = {
                 role: "マナ",
                 content: data.response,
                 timestamp: data.timestamp,
@@ -214,6 +246,13 @@ const MathTeachingGame: React.FC = () => {
 
             setConversationHistory((prev) => [...prev, newMessage]);
             setCharacter((prev) => ({ ...prev, mood: "curious" }));
+            
+            // サーバーにメッセージを保存
+            try {
+                await saveMessage("assistant", data.response, currentTopic);
+            } catch (error) {
+                console.error("Failed to save message:", error);
+            }
         } catch (error) {
             setCurrentQuestion("今日は何を勉強しようかな？🤔");
         } finally {
@@ -227,14 +266,21 @@ const MathTeachingGame: React.FC = () => {
 
         setIsLoading(true);
 
-        // ユーザーメッセージを履歴に追加
-        const userMessage: ConversationMessage = {
+        // ユーザーメッセージを履歴に追加（ローカルとサーバーの両方）
+        const userMessage: LocalConversationMessage = {
             role: "ユーザー",
             content: userExplanation,
             timestamp: new Date().toISOString(),
         };
 
         setConversationHistory((prev) => [...prev, userMessage]);
+        
+        // サーバーにユーザーメッセージを保存
+        try {
+            await saveMessage("user", userExplanation, currentTopic);
+        } catch (error) {
+            console.error("Failed to save user message:", error);
+        }
 
         try {
             const data = await callAPI("answer", userExplanation);
@@ -242,16 +288,41 @@ const MathTeachingGame: React.FC = () => {
             setAiResponse(data.response);
 
             // AIの応答を履歴に追加
-            const aiMessage: ConversationMessage = {
+            const aiMessage: LocalConversationMessage = {
                 role: "マナ",
                 content: data.response,
                 timestamp: data.timestamp,
             };
 
             setConversationHistory((prev) => [...prev, aiMessage]);
+            
+            // サーバーにAIメッセージを保存
+            try {
+                await saveMessage("assistant", data.response, currentTopic);
+            } catch (error) {
+                console.error("Failed to save AI message:", error);
+            }
 
-            // キャラクター状態を更新
+            // キャラクター状態を更新（ローカルとサーバーの両方）
             updateCharacterState(data.expGain || 0, data.mood || "curious");
+            
+            // サーバーに経験値追加
+            if (data.expGain && data.expGain > 0) {
+                try {
+                    await addExperience(data.expGain, currentTopic);
+                } catch (error) {
+                    console.error("Failed to add experience:", error);
+                }
+            }
+            
+            // サーバーに気分更新
+            if (data.mood) {
+                try {
+                    await updateMood(data.mood);
+                } catch (error) {
+                    console.error("Failed to update mood:", error);
+                }
+            }
         } catch (error) {
             setAiResponse(
                 "すみません、今は調子が悪いみたいです... 後でもう一度試してもらえますか？😅"
@@ -353,6 +424,24 @@ const MathTeachingGame: React.FC = () => {
             <div className="max-w-md mx-auto space-y-4">
                 {/* ヘッダー */}
                 <div className="math-card">
+                    {/* User Info and Logout */}
+                    <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
+                        <div className="flex items-center space-x-2">
+                            <User className="w-4 h-4 text-gray-500" />
+                            <span className="text-sm text-gray-600">
+                                {user?.username || 'ユーザー'}
+                            </span>
+                        </div>
+                        <button
+                            onClick={logout}
+                            className="flex items-center space-x-1 text-sm text-red-600 hover:text-red-700 transition-colors"
+                            title="ログアウト"
+                        >
+                            <LogOut className="w-4 h-4" />
+                            <span>ログアウト</span>
+                        </button>
+                    </div>
+
                     <div className="flex items-center justify-between">
                         <div>
                             <h1 className="text-xl font-bold text-gray-800">

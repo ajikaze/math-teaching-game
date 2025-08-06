@@ -112,3 +112,39 @@ function validateBusinessRules(data: any): string | null {
 
     return null;
 }
+
+// 認証用バリデーションスキーマ
+const registerSchema = Joi.object({
+    email: Joi.string().email().required(),
+    username: Joi.string().min(3).max(50).required(),
+    password: Joi.string().min(6).max(100).required()
+});
+
+const loginSchema = Joi.object({
+    email: Joi.string().email().required(),
+    password: Joi.string().required()
+});
+
+export const validateAuth = {
+    register: (req: Request, res: Response, next: NextFunction) => {
+        const { error } = registerSchema.validate(req.body);
+        if (error) {
+            return res.status(400).json({
+                error: 'Validation error',
+                details: error.details.map(detail => detail.message)
+            });
+        }
+        next();
+    },
+
+    login: (req: Request, res: Response, next: NextFunction) => {
+        const { error } = loginSchema.validate(req.body);
+        if (error) {
+            return res.status(400).json({
+                error: 'Validation error',
+                details: error.details.map(detail => detail.message)
+            });
+        }
+        next();
+    }
+};
