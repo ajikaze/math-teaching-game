@@ -17,6 +17,10 @@ model User {
 
   characterState CharacterState?
   conversations  Conversation[]
+  learningSessions LearningSession[]
+  learningActivities LearningActivity[]
+  dailyStats DailyStats[]
+  achievements Achievement[]
 
   @@map("users")
 }
@@ -50,4 +54,75 @@ model Conversation {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("conversations")
+}
+
+model LearningSession {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  startTime    DateTime @default(now()) @map("start_time")
+  endTime      DateTime? @map("end_time")
+  duration     Int?     // minutes
+  topic        String
+  problemsSolved Int    @default(0) @map("problems_solved")
+  correctAnswers Int    @default(0) @map("correct_answers")
+  totalScore   Float    @default(0) @map("total_score")
+  averageResponseTime Float @default(0) @map("average_response_time") // seconds
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activities LearningActivity[]
+
+  @@map("learning_sessions")
+}
+
+model LearningActivity {
+  id              String   @id @default(cuid())
+  sessionId       String   @map("session_id")
+  userId          String   @map("user_id")
+  timestamp       DateTime @default(now())
+  activityType    String   @map("activity_type") // "question", "answer", "hint_request"
+  topic           String
+  difficulty      String   @default("intermediate")
+  content         String
+  responseTime    Int?     @map("response_time") // seconds
+  isCorrect       Boolean? @map("is_correct")
+  score           Float    @default(0)
+  emotionState    String?  @map("emotion_state")
+  
+  session LearningSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("learning_activities")
+}
+
+model DailyStats {
+  id               String   @id @default(cuid())
+  userId           String   @map("user_id")
+  date             DateTime @map("date")
+  studyTime        Int      @default(0) @map("study_time") // minutes
+  problemsSolved   Int      @default(0) @map("problems_solved")
+  correctAnswers   Int      @default(0) @map("correct_answers")
+  topicsStudied    String   @default("[]") @map("topics_studied") // JSON string
+  averageScore     Float    @default(0) @map("average_score")
+  longestStreak    Int      @default(0) @map("longest_streak") // consecutive correct answers
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@map("daily_stats")
+}
+
+model Achievement {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  type         String   // "milestone", "streak", "mastery", "time_based"
+  category     String   // "algebra", "geometry", "functions", "probability", "general"
+  title        String
+  description  String
+  iconUrl      String?  @map("icon_url")
+  pointsAwarded Int     @default(0) @map("points_awarded")
+  unlockedAt   DateTime @default(now()) @map("unlocked_at")
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("achievements")
 }

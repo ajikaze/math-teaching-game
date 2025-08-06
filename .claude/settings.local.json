@@ -9,7 +9,8 @@
       "Bash(npm run lint)",
       "Bash(npx prisma migrate dev:*)",
       "Bash(curl:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(pkill:*)"
     ],
     "deny": []
   }

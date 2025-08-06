@@ -55,6 +55,7 @@ import { healthRouter } from "./routes/health";
 import authRouter from "./routes/auth";
 import dataRouter from "./routes/data";
 import adaptiveLearningRouter from "./routes/adaptiveLearning";
+import analyticsRouter from "./routes/analytics";
 import { errorHandler } from "./middleware/errorHandler";
 import { logger } from "./utils/logger";
 
@@ -98,6 +99,7 @@ app.use("/api/chat", chatRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/data", dataRouter);
 app.use("/api/adaptive", adaptiveLearningRouter);
+app.use("/api/analytics", analyticsRouter);
 
 // ヘルスチェックルート
 app.use("/health", healthRouter);
@@ -125,6 +127,21 @@ app.get("/", (req, res) => {
             "GET /api/adaptive/personality-profile - Get personality profile",
             "POST /api/adaptive/enhanced-chat - Enhanced AI chat",
             "GET /api/adaptive/detailed-analysis - Get detailed analysis",
+            "GET /api/analytics/detailed-stats - Get detailed learning statistics",
+            "POST /api/analytics/session/start - Start learning session",
+            "POST /api/analytics/session/:sessionId/end - End learning session",
+            "POST /api/analytics/activity/record - Record learning activity",
+            "GET /api/analytics/reports/daily - Get daily report",
+            "GET /api/analytics/reports/weekly - Get weekly report",
+            "GET /api/analytics/reports/monthly - Get monthly report",
+            "POST /api/analytics/reports/custom - Get custom period report",
+            "GET /api/analytics/comparison/peer - Get peer comparison",
+            "GET /api/analytics/comparison/progress - Get progress comparison",
+            "GET /api/analytics/visualizations/progress-chart - Get progress chart",
+            "GET /api/analytics/visualizations/topic-breakdown - Get topic breakdown",
+            "GET /api/analytics/visualizations/time-distribution - Get time distribution",
+            "GET /api/analytics/visualizations/performance-trends - Get performance trends",
+            "GET /api/analytics/visualizations/comparison-charts - Get comparison charts",
             "GET /health - Basic health check",
             "GET /health/detailed - Detailed health check",
             "GET /health/ai - AI connection test",

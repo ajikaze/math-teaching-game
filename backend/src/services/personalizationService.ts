@@ -269,7 +269,7 @@ export class PersonalizationService {
   }
 
   private analyzePreferredDifficulty(proficiency: any, level: number): UserPersonalityProfile['preferredDifficulty'] {
-    const avgProficiency = Object.values(proficiency).reduce((a: any, b: any) => a + b, 0) / 4;
+    const avgProficiency = Object.values(proficiency).reduce((a: number, b: unknown) => a + (typeof b === 'number' ? b : 0), 0) / 4;
     
     if (avgProficiency < 40) return 'easy';
     if (avgProficiency < 70) return 'moderate';
