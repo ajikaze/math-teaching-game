@@ -54,6 +54,7 @@ import { chatRouter } from "./routes/chat";
 import { healthRouter } from "./routes/health";
 import authRouter from "./routes/auth";
 import dataRouter from "./routes/data";
+import adaptiveLearningRouter from "./routes/adaptiveLearning";
 import { errorHandler } from "./middleware/errorHandler";
 import { logger } from "./utils/logger";
 
@@ -96,6 +97,7 @@ app.use((req, res, next) => {
 app.use("/api/chat", chatRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/data", dataRouter);
+app.use("/api/adaptive", adaptiveLearningRouter);
 
 // ヘルスチェックルート
 app.use("/health", healthRouter);
@@ -117,6 +119,12 @@ app.get("/", (req, res) => {
             "GET /api/data/conversations - Get conversation history",
             "POST /api/data/conversations - Save message",
             "GET /api/data/stats - Get user stats",
+            "GET /api/adaptive/metrics - Get learning metrics",
+            "GET /api/adaptive/recommendations - Get adaptive recommendations",
+            "GET /api/adaptive/learning-path - Get learning path",
+            "GET /api/adaptive/personality-profile - Get personality profile",
+            "POST /api/adaptive/enhanced-chat - Enhanced AI chat",
+            "GET /api/adaptive/detailed-analysis - Get detailed analysis",
             "GET /health - Basic health check",
             "GET /health/detailed - Detailed health check",
             "GET /health/ai - AI connection test",
