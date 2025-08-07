@@ -6,8 +6,12 @@ import {
     Square,
     Ruler,
     Calculator,
-    Eye
+    Eye,
+    TrendingUp,
+    Box,
+    Activity
 } from 'lucide-react';
+import MathVisualizer from './MathVisualizer';
 
 interface Point {
     x: number;
@@ -42,6 +46,7 @@ const VisualLearning: React.FC = () => {
     const [zoom, setZoom] = useState(1);
     const [showGrid, setShowGrid] = useState(true);
     const [showMeasurements, setShowMeasurements] = useState(false);
+    const [currentTab, setCurrentTab] = useState<'interactive' | 'functions' | '3d' | 'animations'>('interactive');
 
     // Sample visual problems
     const visualProblems: VisualProblem[] = [
@@ -361,31 +366,96 @@ const VisualLearning: React.FC = () => {
                     <Eye className="mr-3 text-purple-500" />
                     ビジュアル学習
                 </h2>
-                <p className="text-gray-600">図形を操作して、数学の概念を視覚的に理解しましょう</p>
+                <p className="text-gray-600">数学の概念を視覚的・体験的に理解しましょう</p>
             </div>
 
-            {/* Problem Selection */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {visualProblems.map(problem => (
+            {/* Tab Navigation */}
+            <div className="flex justify-center mb-6">
+                <div className="flex bg-gray-100 rounded-lg p-1">
                     <button
-                        key={problem.id}
-                        onClick={() => setSelectedProblem(problem)}
-                        className={`p-4 rounded-lg border-2 text-left transition-all ${
-                            selectedProblem?.id === problem.id
-                                ? 'border-purple-500 bg-purple-50'
-                                : 'border-gray-200 bg-white hover:border-purple-300'
+                        onClick={() => setCurrentTab('interactive')}
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-2 ${
+                            currentTab === 'interactive' 
+                                ? 'bg-white text-purple-700 shadow-sm' 
+                                : 'text-gray-600 hover:text-gray-800'
                         }`}
                     >
-                        <div className="flex items-center mb-2">
-                            {problem.category === 'geometry' && <Square className="w-5 h-5 text-blue-500 mr-2" />}
-                            {problem.category === 'algebra' && <Calculator className="w-5 h-5 text-green-500 mr-2" />}
-                            {problem.category === 'functions' && <Ruler className="w-5 h-5 text-purple-500 mr-2" />}
-                            <span className="font-semibold">{problem.title}</span>
-                        </div>
-                        <p className="text-sm text-gray-600">{problem.description}</p>
+                        <Square className="w-4 h-4" />
+                        <span>図形操作</span>
                     </button>
-                ))}
+                    <button
+                        onClick={() => setCurrentTab('functions')}
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-2 ${
+                            currentTab === 'functions' 
+                                ? 'bg-white text-blue-700 shadow-sm' 
+                                : 'text-gray-600 hover:text-gray-800'
+                        }`}
+                    >
+                        <TrendingUp className="w-4 h-4" />
+                        <span>関数グラフ</span>
+                    </button>
+                    <button
+                        onClick={() => setCurrentTab('3d')}
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-2 ${
+                            currentTab === '3d' 
+                                ? 'bg-white text-green-700 shadow-sm' 
+                                : 'text-gray-600 hover:text-gray-800'
+                        }`}
+                    >
+                        <Box className="w-4 h-4" />
+                        <span>3Dオブジェクト</span>
+                    </button>
+                    <button
+                        onClick={() => setCurrentTab('animations')}
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-2 ${
+                            currentTab === 'animations' 
+                                ? 'bg-white text-orange-700 shadow-sm' 
+                                : 'text-gray-600 hover:text-gray-800'
+                        }`}
+                    >
+                        <Activity className="w-4 h-4" />
+                        <span>アニメーション</span>
+                    </button>
+                </div>
             </div>
+
+            {/* Content based on selected tab */}
+            {currentTab === 'functions' && (
+                <MathVisualizer type="function" />
+            )}
+
+            {currentTab === '3d' && (
+                <MathVisualizer type="3d" />
+            )}
+
+            {currentTab === 'animations' && (
+                <MathVisualizer type="animation" />
+            )}
+
+            {currentTab === 'interactive' && (
+                <>
+                    {/* Problem Selection */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {visualProblems.map(problem => (
+                            <button
+                                key={problem.id}
+                                onClick={() => setSelectedProblem(problem)}
+                                className={`p-4 rounded-lg border-2 text-left transition-all ${
+                                    selectedProblem?.id === problem.id
+                                        ? 'border-purple-500 bg-purple-50'
+                                        : 'border-gray-200 bg-white hover:border-purple-300'
+                                }`}
+                            >
+                                <div className="flex items-center mb-2">
+                                    {problem.category === 'geometry' && <Square className="w-5 h-5 text-blue-500 mr-2" />}
+                                    {problem.category === 'algebra' && <Calculator className="w-5 h-5 text-green-500 mr-2" />}
+                                    {problem.category === 'functions' && <Ruler className="w-5 h-5 text-purple-500 mr-2" />}
+                                    <span className="font-semibold">{problem.title}</span>
+                                </div>
+                                <p className="text-sm text-gray-600">{problem.description}</p>
+                            </button>
+                        ))}
+                    </div>
 
             {selectedProblem && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -550,12 +620,14 @@ const VisualLearning: React.FC = () => {
                 </div>
             )}
 
-            {/* Empty State */}
-            {!selectedProblem && (
-                <div className="text-center py-12 text-gray-500">
-                    <Eye size={48} className="mx-auto mb-4 opacity-50" />
-                    <p>上の問題を選択して、ビジュアル学習を始めましょう</p>
-                </div>
+                    {/* Empty State */}
+                    {!selectedProblem && (
+                        <div className="text-center py-12 text-gray-500">
+                            <Eye size={48} className="mx-auto mb-4 opacity-50" />
+                            <p>上の問題を選択して、インタラクティブ学習を始めましょう</p>
+                        </div>
+                    )}
+                </>
             )}
         </div>
     );
