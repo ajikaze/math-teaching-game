@@ -10,10 +10,13 @@ import {
     RefreshCw,
     LogOut,
     User,
+    BarChart3,
 } from "lucide-react";
 import { useAuth } from '../contexts/AuthContext';
 import { useGameData } from '../contexts/GameDataContext';
 import { apiClient } from '../utils/api';
+import LearningAnalytics from './LearningAnalytics';
+import BadgeSystem from './BadgeSystem';
 
 // Local interfaces for component state
 interface LocalCharacterState {
@@ -46,8 +49,9 @@ const MathTeachingGame: React.FC = () => {
         addExperience, 
         updateMood, 
         saveMessage,
-        refreshAllData
     } = useGameData();
+    
+    const [currentView, setCurrentView] = useState<'game' | 'analytics' | 'badges'>('game');
     
     const [character, setCharacter] = useState<LocalCharacterState>({
         name: "マナ",
@@ -357,7 +361,7 @@ const MathTeachingGame: React.FC = () => {
                 experience: newExp % 100,
                 level: newLevel,
                 understanding: newUnderstanding,
-                mood: newMood as CharacterState["mood"],
+                mood: newMood as LocalCharacterState["mood"],
                 totalProblems: prev.totalProblems + 1,
             };
         });
@@ -421,7 +425,7 @@ const MathTeachingGame: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
-            <div className="max-w-md mx-auto space-y-4">
+            <div className={`${currentView !== 'game' ? 'max-w-6xl' : 'max-w-md'} mx-auto space-y-4 transition-all duration-300`}>
                 {/* ヘッダー */}
                 <div className="math-card">
                     {/* User Info and Logout */}
@@ -432,14 +436,50 @@ const MathTeachingGame: React.FC = () => {
                                 {user?.username || 'ユーザー'}
                             </span>
                         </div>
-                        <button
-                            onClick={logout}
-                            className="flex items-center space-x-1 text-sm text-red-600 hover:text-red-700 transition-colors"
-                            title="ログアウト"
-                        >
-                            <LogOut className="w-4 h-4" />
-                            <span>ログアウト</span>
-                        </button>
+                        <div className="flex items-center space-x-3">
+                            <button
+                                onClick={() => setCurrentView('analytics')}
+                                className={`flex items-center space-x-1 text-sm transition-colors ${
+                                    currentView === 'analytics' 
+                                        ? 'text-blue-700 font-medium' 
+                                        : 'text-blue-600 hover:text-blue-700'
+                                }`}
+                                title="学習分析を見る"
+                            >
+                                <BarChart3 className="w-4 h-4" />
+                                <span>分析</span>
+                            </button>
+                            <button
+                                onClick={() => setCurrentView('badges')}
+                                className={`flex items-center space-x-1 text-sm transition-colors ${
+                                    currentView === 'badges' 
+                                        ? 'text-yellow-700 font-medium' 
+                                        : 'text-yellow-600 hover:text-yellow-700'
+                                }`}
+                                title="バッジを見る"
+                            >
+                                <Trophy className="w-4 h-4" />
+                                <span>バッジ</span>
+                            </button>
+                            {currentView !== 'game' && (
+                                <button
+                                    onClick={() => setCurrentView('game')}
+                                    className="flex items-center space-x-1 text-sm text-gray-600 hover:text-gray-700 transition-colors"
+                                    title="ゲームに戻る"
+                                >
+                                    <Brain className="w-4 h-4" />
+                                    <span>ゲーム</span>
+                                </button>
+                            )}
+                            <button
+                                onClick={logout}
+                                className="flex items-center space-x-1 text-sm text-red-600 hover:text-red-700 transition-colors"
+                                title="ログアウト"
+                            >
+                                <LogOut className="w-4 h-4" />
+                                <span>ログアウト</span>
+                            </button>
+                        </div>
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -786,11 +826,313 @@ const MathTeachingGame: React.FC = () => {
                     </div>
                 </div>
 
-                {/* フッター */}
-                <div className="text-center text-xs text-gray-500 py-4">
-                    <p>マナと一緒に数学を楽しく学ぼう！ 🎓✨</p>
-                    <p className="mt-1">powered by Gemini AI (デモ版)</p>
-                </div>
+                {/* 条件付きコンテンツ表示 */}
+                {currentView === 'analytics' ? (
+                    <LearningAnalytics />
+                ) : currentView === 'badges' ? (
+                    <BadgeSystem />
+                ) : (
+                    <>
+                        {/* 分野選択 */}
+                        <div className="math-card">
+                            <h2 className="font-semibold text-gray-800 mb-3">
+                                学習分野
+                            </h2>
+                            <div className="grid grid-cols-2 gap-3">
+                                {Object.entries(mathTopics).map(([key, topic]) => (
+                                    <button
+                                        key={key}
+                                        onClick={() => setCurrentTopic(key)}
+                                        className={`p-4 rounded-xl flex flex-col items-center space-y-2 transition-all duration-200 ${
+                                            currentTopic === key
+                                                ? `${topic.color} text-white shadow-lg scale-105`
+                                                : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-102"
+                                        }`}
+                                    >
+                                        <span className="text-2xl">{topic.icon}</span>
+                                        <div className="text-center">
+                                            <div className="font-medium">
+                                                {topic.name}
+                                            </div>
+                                            <div className="text-xs opacity-75">
+                                                {topic.description}
+                                            </div>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* 理解度表示 */}
+                            <div className="mt-6">
+                                <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                                    マナの理解度
+                                </h3>
+                                <div className="space-y-2">
+                                    {Object.entries(character.understanding).map(
+                                        ([key, value]) => (
+                                            <div
+                                                key={key}
+                                                className="flex items-center justify-between"
+                                            >
+                                                <span className="text-sm text-gray-600">
+                                                    {
+                                                        mathTopics[
+                                                            key as keyof typeof mathTopics
+                                                        ]?.name
+                                                    }
+                                                </span>
+                                                <div className="flex items-center space-x-2">
+                                                    <div className="w-20 bg-gray-200 rounded-full h-2">
+                                                        <div
+                                                            className="bg-gradient-to-r from-green-400 to-blue-500 h-2 rounded-full transition-all duration-500"
+                                                            style={{
+                                                                width: `${value}%`,
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <span className="text-sm text-gray-600 w-10 text-right">
+                                                        {value}%
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        )
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 対話エリア */}
+                        <div className="math-card">
+                            <div className="flex items-start space-x-3">
+                                <div className="text-3xl">
+                                    {getCharacterExpression()}
+                                </div>
+                                <div className="flex-1 space-y-3">
+                                    {/* マナの質問 */}
+                                    {(currentQuestion || isGeneratingQuestion) && (
+                                        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 border-l-4 border-blue-500">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <p className="text-blue-800 font-medium">
+                                                    マナ
+                                                </p>
+                                                <button
+                                                    onClick={generateNewQuestion}
+                                                    disabled={isGeneratingQuestion}
+                                                    className="text-blue-600 hover:text-blue-800 transition-colors"
+                                                    title="新しい質問を生成"
+                                                >
+                                                    <RefreshCw
+                                                        size={16}
+                                                        className={
+                                                            isGeneratingQuestion
+                                                                ? "animate-spin"
+                                                                : ""
+                                                        }
+                                                    />
+                                                </button>
+                                            </div>
+                                            {isGeneratingQuestion ? (
+                                                <div className="flex items-center space-x-2 text-blue-600">
+                                                    <Sparkles
+                                                        size={16}
+                                                        className="animate-pulse"
+                                                    />
+                                                    <span>質問を考えています...</span>
+                                                </div>
+                                            ) : (
+                                                <p className="text-blue-800">
+                                                    {currentQuestion}
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* AIの応答 */}
+                                    {isLoading && (
+                                        <div className="bg-gray-100 rounded-xl p-4">
+                                            <div className="flex items-center space-x-2 text-gray-600">
+                                                <div className="animate-bounce">🤔</div>
+                                                <span>マナが考えています...</span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {aiResponse && !isLoading && (
+                                        <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-4 border-l-4 border-green-500">
+                                            <p className="text-green-800 font-medium mb-2">
+                                                マナ
+                                            </p>
+                                            <p className="text-green-800">
+                                                {aiResponse}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 入力エリア */}
+                        <div className="math-card">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="font-semibold text-gray-800">
+                                    マナに教えてあげよう！
+                                </h3>
+                                <div className="flex items-center space-x-2 text-sm text-gray-500">
+                                    <Brain size={16} />
+                                    <span>AIモード</span>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="relative">
+                                    <textarea
+                                        value={userExplanation}
+                                        onChange={(e) =>
+                                            setUserExplanation(e.target.value)
+                                        }
+                                        placeholder="ここに説明を入力してね... 詳しく教えるほどマナが成長するよ！"
+                                        className="w-full p-4 border-2 border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                                        rows={4}
+                                    />
+                                    <div className="absolute bottom-2 right-2 text-xs text-gray-400">
+                                        {userExplanation.length}/500
+                                    </div>
+                                </div>
+
+                                <div className="flex space-x-2">
+                                    <button
+                                        onClick={submitExplanation}
+                                        disabled={!userExplanation.trim() || isLoading}
+                                        className="flex-1 math-button flex items-center justify-center space-x-2"
+                                    >
+                                        {isLoading ? (
+                                            <>
+                                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                                                <span>送信中...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <MessageCircle size={18} />
+                                                <span>教える！</span>
+                                            </>
+                                        )}
+                                    </button>
+
+                                    <button
+                                        onClick={startVoiceRecognition}
+                                        disabled={isListening}
+                                        className={`p-3 rounded-xl transition-all duration-200 ${
+                                            isListening
+                                                ? "bg-red-500 text-white animate-pulse"
+                                                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                        }`}
+                                        title="音声入力"
+                                    >
+                                        {isListening ? (
+                                            <MicOff size={20} />
+                                        ) : (
+                                            <Mic size={20} />
+                                        )}
+                                    </button>
+
+                                    <button
+                                        onClick={generateNewQuestion}
+                                        disabled={isGeneratingQuestion}
+                                        className="p-3 bg-purple-100 text-purple-700 rounded-xl hover:bg-purple-200 transition-all duration-200"
+                                        title="新しい質問を生成"
+                                    >
+                                        <Sparkles
+                                            size={20}
+                                            className={
+                                                isGeneratingQuestion
+                                                    ? "animate-spin"
+                                                    : ""
+                                            }
+                                        />
+                                    </button>
+                                </div>
+
+                                {isListening && (
+                                    <div className="text-center">
+                                        <div className="inline-flex items-center space-x-2 text-red-500 bg-red-50 px-4 py-2 rounded-full">
+                                            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                                            <span className="text-sm font-medium">
+                                                音声を聞いています...
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* 学習のヒント */}
+                                <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+                                    <div className="flex items-start space-x-2">
+                                        <Trophy
+                                            size={16}
+                                            className="text-yellow-600 mt-0.5"
+                                        />
+                                        <div className="text-sm text-yellow-800">
+                                            <p className="font-medium mb-1">
+                                                学習のコツ 💡
+                                            </p>
+                                            <ul className="space-y-1 text-xs">
+                                                <li>
+                                                    • 具体例を使って説明すると効果的
+                                                </li>
+                                                <li>
+                                                    •
+                                                    段階的に説明するとマナが理解しやすい
+                                                </li>
+                                                <li>
+                                                    • 図や数式を言葉で表現してみよう
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 学習統計 */}
+                        <div className="math-card">
+                            <h3 className="font-semibold text-gray-800 mb-3">
+                                学習統計
+                            </h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="text-center p-3 bg-blue-50 rounded-lg">
+                                    <div className="text-2xl font-bold text-blue-600">
+                                        {character.level}
+                                    </div>
+                                    <div className="text-xs text-blue-600">レベル</div>
+                                </div>
+                                <div className="text-center p-3 bg-green-50 rounded-lg">
+                                    <div className="text-2xl font-bold text-green-600">
+                                        {character.totalProblems}
+                                    </div>
+                                    <div className="text-xs text-green-600">解答数</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* AIモード表示 */}
+                        <div className="math-card bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
+                            <div className="flex items-center space-x-2 text-green-800">
+                                <Sparkles size={20} />
+                                <div>
+                                    <p className="font-medium">AIモード稼働中</p>
+                                    <p className="text-sm">
+                                        実際のAI機能でマナと対話できます！詳しく教えるほどマナが成長します。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* フッター */}
+                        <div className="text-center text-xs text-gray-500 py-4">
+                            <p>マナと一緒に数学を楽しく学ぼう！ 🎓✨</p>
+                            <p className="mt-1">powered by Gemini AI (デモ版)</p>
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );

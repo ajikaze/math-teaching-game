@@ -203,6 +203,16 @@ class ApiClient {
     return this.handleResponse(response);
   }
 
+  // Analytics APIs
+  async get(endpoint: string): Promise<any> {
+    const response = await fetch(`${this.baseUrl}/api${endpoint}`, {
+      headers: this.getAuthHeaders()
+    });
+    
+    const data = await this.handleResponse<APIResponse<any>>(response);
+    return data;
+  }
+
   // Utility methods
   isAuthenticated(): boolean {
     return !!localStorage.getItem('authToken');
