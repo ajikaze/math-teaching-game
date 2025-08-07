@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Point, Shape, DragState, CanvasConfig, CANVAS_CONSTANTS } from '../types/MathTypes';
 import { CanvasUtils } from '../utils/CanvasUtils';
 

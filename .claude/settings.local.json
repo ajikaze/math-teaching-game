@@ -12,7 +12,8 @@
       "Bash(npm run dev:*)",
       "Bash(pkill:*)",
       "Bash(find:*)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(npx eslint:*)"
     ],
     "deny": []
   }
