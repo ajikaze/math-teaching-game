@@ -11,12 +11,14 @@ import {
     LogOut,
     User,
     BarChart3,
+    Eye,
 } from "lucide-react";
 import { useAuth } from '../contexts/AuthContext';
 import { useGameData } from '../contexts/GameDataContext';
 import { apiClient } from '../utils/api';
 import LearningAnalytics from './LearningAnalytics';
 import BadgeSystem from './BadgeSystem';
+import VisualLearning from './VisualLearning';
 
 // Local interfaces for component state
 interface LocalCharacterState {
@@ -51,7 +53,7 @@ const MathTeachingGame: React.FC = () => {
         saveMessage,
     } = useGameData();
     
-    const [currentView, setCurrentView] = useState<'game' | 'analytics' | 'badges'>('game');
+    const [currentView, setCurrentView] = useState<'game' | 'analytics' | 'badges' | 'visual'>('game');
     
     const [character, setCharacter] = useState<LocalCharacterState>({
         name: "マナ",
@@ -461,6 +463,18 @@ const MathTeachingGame: React.FC = () => {
                                 <Trophy className="w-4 h-4" />
                                 <span>バッジ</span>
                             </button>
+                            <button
+                                onClick={() => setCurrentView('visual')}
+                                className={`flex items-center space-x-1 text-sm transition-colors ${
+                                    currentView === 'visual' 
+                                        ? 'text-purple-700 font-medium' 
+                                        : 'text-purple-600 hover:text-purple-700'
+                                }`}
+                                title="ビジュアル学習"
+                            >
+                                <Eye className="w-4 h-4" />
+                                <span>ビジュアル</span>
+                            </button>
                             {currentView !== 'game' && (
                                 <button
                                     onClick={() => setCurrentView('game')}
@@ -831,6 +845,8 @@ const MathTeachingGame: React.FC = () => {
                     <LearningAnalytics />
                 ) : currentView === 'badges' ? (
                     <BadgeSystem />
+                ) : currentView === 'visual' ? (
+                    <VisualLearning />
                 ) : (
                     <>
                         {/* 分野選択 */}
